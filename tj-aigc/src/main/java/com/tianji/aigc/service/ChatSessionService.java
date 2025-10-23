@@ -2,6 +2,8 @@ package com.tianji.aigc.service;
 
 import com.tianji.aigc.vo.SessionVO;
 
+import java.util.List;
+
 public interface ChatSessionService {
 
     /**
@@ -12,4 +14,10 @@ public interface ChatSessionService {
      */
     SessionVO createSession(Integer num);
 
+    /**
+     * 获取热门问题
+     *
+     * @return 热门问题列表
+     */
+    List<SessionVO.Example> hotExamples(Integer num);
 }
