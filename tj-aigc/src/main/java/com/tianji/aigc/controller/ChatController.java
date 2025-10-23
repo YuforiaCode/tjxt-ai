@@ -22,10 +22,11 @@ public class ChatController {
     private final ChatService chatService;
 
     /**
-     * 聊天(流式对话)
+     * 聊天
      * @param chatDTO 聊天参数(用户的问题和会话id)
-     * @return 回答内容(流式结构的文本内容和事件类型)
+     * @return 回答内容(文本内容和事件类型)
      * 流式结构说明：每行数据，都是一个json数据
+     * 流式对话 -> 应用system提示词
      */
     @NoWrapper // 标记结果不进行包装
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
