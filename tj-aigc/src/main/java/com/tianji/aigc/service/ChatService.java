@@ -1,6 +1,7 @@
 package com.tianji.aigc.service;
 
 import com.tianji.aigc.vo.ChatEventVO;
+import com.tianji.common.utils.UserContext;
 import reactor.core.publisher.Flux;
 
 public interface ChatService {
@@ -11,7 +12,7 @@ public interface ChatService {
      * @param sessionId 会话id
      * @return 回答内容(文本内容和事件类型)
      * 流式结构说明：每行数据，都是一个json数据
-     * 流式对话 -> 应用system提示词
+     * 流式对话 -> 应用system提示词 -> 会话记忆
      */
     Flux<ChatEventVO> chat(String question, String sessionId);
 
@@ -20,4 +21,13 @@ public interface ChatService {
      * @param sessionId 会话id
      */
     void stop(String sessionId);
+
+    /**
+     * 获取对话id，规则：用户id_会话id
+     * @param sessionId 会话id
+     * @return 对话id
+     */
+    static String getConversationId(String sessionId) {
+        return UserContext.getUser() + "_" + sessionId;
+    }
 }

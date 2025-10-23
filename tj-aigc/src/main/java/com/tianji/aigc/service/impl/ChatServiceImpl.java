@@ -8,6 +8,7 @@ import com.tianji.aigc.vo.ChatEventVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -33,15 +34,19 @@ public class ChatServiceImpl implements ChatService {
      * @param sessionId 会话id
      * @return 回答内容(文本内容和事件类型)
      * 流式结构说明：每行数据，都是一个json数据
-     * 流式对话 -> 应用system提示词
+     * 流式对话 -> 应用system提示词 -> 会话记忆
      */
     @Override
     public Flux<ChatEventVO> chat(String question, String sessionId) {
+        // 获取对话id
+        var conversationId = ChatService.getConversationId(sessionId);
+
         return this.chatClient.prompt()
                 .system(promptSystem -> promptSystem
                         .text(this.systemPromptConfig.getChatSystemMessage().get()) // 设置系统提示语
                         .param("now", DateUtil.now()) // 设置当前时间的参数
                 )
+                .advisors(advisor -> advisor.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY, conversationId))
                 .user(question)
                 .stream()
                 .chatResponse()
