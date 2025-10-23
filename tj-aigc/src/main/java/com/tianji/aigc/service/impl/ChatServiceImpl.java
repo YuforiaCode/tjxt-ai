@@ -11,6 +11,10 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -18,6 +22,10 @@ public class ChatServiceImpl implements ChatService {
 
     private final ChatClient chatClient;
     private final SystemPromptConfig systemPromptConfig;
+
+    // 存储大模型的生成状态，这里采用ConcurrentHashMap是确保线程安全
+    // 目前的版本暂时用Map实现，如果考虑分布式环境的话，可以考虑用redis来实现
+    private static final Map<String, Boolean> GENERATE_STATUS = new ConcurrentHashMap<>();
 
     /**
      * 聊天
@@ -37,6 +45,15 @@ public class ChatServiceImpl implements ChatService {
                 .user(question)
                 .stream()
                 .chatResponse()
+                .doFirst(() -> {  //输出开始，标记正在输出
+                    GENERATE_STATUS.put(sessionId, true);
+                })
+                .doOnComplete(() -> { //输出结束，清除标记
+                    GENERATE_STATUS.remove(sessionId);
+                })
+                .doOnError(throwable -> GENERATE_STATUS.remove(sessionId)) // 错误时清除标记
+                // 输出过程中，判断是否正在输出，如果正在输出，则继续输出，否则结束输出
+                .takeWhile(s -> Optional.ofNullable(GENERATE_STATUS.get(sessionId)).orElse(false))
                 .map(chatResponse -> {
                     // 获取大模型的输出的内容
                     String text = chatResponse.getResult().getOutput().getText();
@@ -49,5 +66,15 @@ public class ChatServiceImpl implements ChatService {
                 .concatWith(Flux.just(ChatEventVO.builder()  // 标记输出结束
                         .eventType(ChatEventTypeEnum.STOP.getValue())
                         .build()));
+    }
+
+    /**
+     * 停止生成
+     * @param sessionId 会话id
+     */
+    @Override
+    public void stop(String sessionId) {
+        // 移除标记
+        GENERATE_STATUS.remove(sessionId);
     }
 }
