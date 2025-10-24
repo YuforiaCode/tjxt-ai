@@ -8,6 +8,8 @@ import cn.hutool.core.stream.StreamUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.tianji.aigc.config.SessionProperties;
 import com.tianji.aigc.entity.ChatSession;
@@ -193,5 +195,22 @@ public class ChatSessionServiceImpl extends ServiceImpl<ChatSessionMapper, ChatS
                 return MORE_THAN_YEAR;
             }
         });
+    }
+
+    /**
+     * 删除历史会话列表
+     * @param sessionId 会话id
+     */
+    @Override
+    public void deleteHistorySession(String sessionId) {
+        //删除数据库的数据
+        LambdaQueryWrapper<ChatSession> queryWrapper = Wrappers.<ChatSession>lambdaQuery()
+                .eq(ChatSession::getSessionId, sessionId)
+                .eq(ChatSession::getUserId, UserContext.getUser());
+        super.remove(queryWrapper);
+
+        //删除redis中的数据
+        String conversationId = ChatService.getConversationId(sessionId);
+        this.chatMemory.clear(conversationId);
     }
 }
