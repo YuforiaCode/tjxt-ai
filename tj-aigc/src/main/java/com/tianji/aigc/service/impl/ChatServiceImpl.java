@@ -10,6 +10,7 @@ import com.tianji.aigc.config.ToolResultHolder;
 import com.tianji.aigc.constants.Constant;
 import com.tianji.aigc.enums.ChatEventTypeEnum;
 import com.tianji.aigc.service.ChatService;
+import com.tianji.aigc.service.ChatSessionService;
 import com.tianji.aigc.vo.ChatEventVO;
 import com.tianji.common.utils.UserContext;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class ChatServiceImpl implements ChatService {
     private final SystemPromptConfig systemPromptConfig;
     private final ChatMemory chatMemory;
     private final VectorStore vectorStore;
+    private final ChatSessionService chatSessionService;
 
     // 存储大模型的生成状态，这里采用ConcurrentHashMap是确保线程安全
     // 目前的版本暂时用Map实现，如果考虑分布式环境的话，可以考虑用redis来实现
@@ -52,7 +54,7 @@ public class ChatServiceImpl implements ChatService {
      * @return 回答内容(文本内容和事件类型)
      * 流式结构说明：每行数据，都是一个json数据
      * 流式对话 -> 应用system提示词 -> 会话记忆 -> 保存停止输出的记录 -> 查询课程 -> 展示课程卡片 -> 预下单 ->
-     * 保存课程查询和预下单提供给前端的额外数据 -> 集成向量库
+     * 保存课程查询和预下单提供给前端的额外数据 -> 集成向量库 -> 异步更新聊天会话的标题
      */
     @Override
     public Flux<ChatEventVO> chat(String question, String sessionId) {
@@ -64,6 +66,9 @@ public class ChatServiceImpl implements ChatService {
         var requestId = IdUtil.fastSimpleUUID();
         // 获取用户id
         var userId = UserContext.getUser();
+
+        //更新会话时间
+        this.chatSessionService.update(sessionId, question, userId);
 
         return this.chatClient.prompt()
                 .system(promptSystem -> promptSystem

@@ -9,7 +9,6 @@ public interface ChatSessionService {
 
     /**
      * 创建会话session
-     *
      * @param num 热门问题的数量
      * @return 会话信息
      */
@@ -27,4 +26,12 @@ public interface ChatSessionService {
      * @return 消息列表
      */
     List<MessageVO> queryBySessionId(String sessionId);
+
+    /**
+     * 更新会话更新时间
+     * @param sessionId 会话ID，用于标识特定的聊天会话
+     * @param title     新的会话标题，如果为空则不进行更新
+     * @param userId    用户ID
+     */
+    void update(String sessionId, String title, Long userId);
 }
