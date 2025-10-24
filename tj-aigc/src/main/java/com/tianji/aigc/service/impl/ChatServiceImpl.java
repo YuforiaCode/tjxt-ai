@@ -1,7 +1,12 @@
 package com.tianji.aigc.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.map.MapUtil;
+import cn.hutool.core.util.IdUtil;
 import com.tianji.aigc.config.SystemPromptConfig;
+import com.tianji.aigc.config.ToolResultHolder;
+import com.tianji.aigc.constants.Constant;
 import com.tianji.aigc.enums.ChatEventTypeEnum;
 import com.tianji.aigc.service.ChatService;
 import com.tianji.aigc.vo.ChatEventVO;
@@ -31,13 +36,16 @@ public class ChatServiceImpl implements ChatService {
     // 目前的版本暂时用Map实现，如果考虑分布式环境的话，可以考虑用redis来实现
     private static final Map<String, Boolean> GENERATE_STATUS = new ConcurrentHashMap<>();
 
+    // 输出结束的标记
+    private static final ChatEventVO STOP_EVENT = ChatEventVO.builder().eventType(ChatEventTypeEnum.STOP.getValue()).build();
+
     /**
      * 聊天
      * @param question 用户的问题
      * @param sessionId 会话id
      * @return 回答内容(文本内容和事件类型)
      * 流式结构说明：每行数据，都是一个json数据
-     * 流式对话 -> 应用system提示词 -> 会话记忆 -> 保存停止输出的记录
+     * 流式对话 -> 应用system提示词 -> 会话记忆 -> 保存停止输出的记录 -> 查询课程 -> 展示课程卡片
      */
     @Override
     public Flux<ChatEventVO> chat(String question, String sessionId) {
@@ -45,6 +53,8 @@ public class ChatServiceImpl implements ChatService {
         var conversationId = ChatService.getConversationId(sessionId);
         // 大模型输出内容的缓存器，用于在输出中断后的数据存储
         StringBuilder outputBuilder = new StringBuilder();
+        // 生成请求id
+        var requestId = IdUtil.fastSimpleUUID();
 
         return this.chatClient.prompt()
                 .system(promptSystem -> promptSystem
@@ -52,6 +62,10 @@ public class ChatServiceImpl implements ChatService {
                         .param("now", DateUtil.now()) // 设置当前时间的参数
                 )
                 .advisors(advisor -> advisor.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY, conversationId))
+                .toolContext(MapUtil.<String, Object>builder() // 设置tool列表
+                        .put(Constant.REQUEST_ID, requestId) // 设置请求id参数
+                        .build()
+                )
                 .user(question)
                 .stream()
                 .chatResponse()
@@ -79,9 +93,21 @@ public class ChatServiceImpl implements ChatService {
                             .eventType(ChatEventTypeEnum.DATA.getValue())
                             .build();
                 })
-                .concatWith(Flux.just(ChatEventVO.builder()  // 标记输出结束
-                        .eventType(ChatEventTypeEnum.STOP.getValue())
-                        .build()));
+                .concatWith(Flux.defer(() -> {
+                    // 通过请求id获取到参数列表，如果不为空，就将其追加到返回结果中
+                    var map = ToolResultHolder.get(requestId);
+                    if (CollUtil.isNotEmpty(map)) {
+                        ToolResultHolder.remove(requestId); // 清除参数列表
+
+                        // 响应给前端的参数数据
+                        ChatEventVO chatEventVO = ChatEventVO.builder()
+                                .eventData(map)
+                                .eventType(ChatEventTypeEnum.PARAM.getValue())
+                                .build();
+                        return Flux.just(chatEventVO, STOP_EVENT);
+                    }
+                    return Flux.just(STOP_EVENT);
+                }));
     }
 
     /**

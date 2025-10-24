@@ -12,7 +12,7 @@ public interface ChatService {
      * @param sessionId 会话id
      * @return 回答内容(文本内容和事件类型)
      * 流式结构说明：每行数据，都是一个json数据
-     * 流式对话 -> 应用system提示词 -> 会话记忆 -> 保存停止输出的记录
+     * 流式对话 -> 应用system提示词 -> 会话记忆 -> 保存停止输出的记录 -> 查询课程 -> 展示课程卡片
      */
     Flux<ChatEventVO> chat(String question, String sessionId);
 
