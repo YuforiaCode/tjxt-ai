@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.StrUtil;
 import com.tianji.aigc.config.SystemPromptConfig;
 import com.tianji.aigc.config.ToolResultHolder;
 import com.tianji.aigc.constants.Constant;
@@ -46,7 +47,8 @@ public class ChatServiceImpl implements ChatService {
      * @param sessionId 会话id
      * @return 回答内容(文本内容和事件类型)
      * 流式结构说明：每行数据，都是一个json数据
-     * 流式对话 -> 应用system提示词 -> 会话记忆 -> 保存停止输出的记录 -> 查询课程 -> 展示课程卡片 -> 预下单
+     * 流式对话 -> 应用system提示词 -> 会话记忆 -> 保存停止输出的记录 -> 查询课程 -> 展示课程卡片 -> 预下单 ->
+     * 保存课程查询和预下单提供给前端的额外数据
      */
     @Override
     public Flux<ChatEventVO> chat(String question, String sessionId) {
@@ -87,6 +89,14 @@ public class ChatServiceImpl implements ChatService {
                 // 输出过程中，判断是否正在输出，如果正在输出，则继续输出，否则结束输出
                 .takeWhile(s -> Optional.ofNullable(GENERATE_STATUS.get(sessionId)).orElse(false))
                 .map(chatResponse -> {
+                    // 对于响应结果进行处理，如果是最后一条数据，就把此次消息id放到内存中
+                    // 主要用于存储消息数据到 redis中，可以根据消息di获取的请求id，再通过请求id就可以获取到参数列表了
+                    // 从而解决，在历史聊天记录中没有外参数的问题
+                    var finishReason = chatResponse.getResult().getMetadata().getFinishReason();
+                    if (StrUtil.equals(Constant.STOP, finishReason)) {
+                        var messageId = chatResponse.getMetadata().getId();
+                        ToolResultHolder.put(messageId, Constant.REQUEST_ID, requestId);
+                    }
                     // 获取大模型的输出的内容
                     String text = chatResponse.getResult().getOutput().getText();
                     // 追加到输出内容中

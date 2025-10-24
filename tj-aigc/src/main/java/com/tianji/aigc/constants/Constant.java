@@ -4,6 +4,8 @@ public interface Constant {
 
     String USER_ID = "userId";
     String REQUEST_ID = "requestId";
+    String STOP = "STOP";
+    String ID = "id";
 
     interface Tools {
         String QUERY_COURSE_BY_ID = "根据课程id查询课程详细信息";
