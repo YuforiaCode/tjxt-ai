@@ -26,7 +26,7 @@ public class SpringAIConfig {
     ) {  // 日志记录器
         return chatClientBuilder
                 .defaultAdvisors(loggerAdvisor, messageChatMemoryAdvisor) //添加 Advisor 功能增强
-                .defaultTools(courseTools, orderTools) //添加默认工具
+                //.defaultTools(courseTools, orderTools) //添加默认工具
                 .build();
     }
 

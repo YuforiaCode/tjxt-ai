@@ -30,7 +30,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
-@Service
+//@Service
 @RequiredArgsConstructor
 public class ChatServiceImpl implements ChatService {
 
