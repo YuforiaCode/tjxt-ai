@@ -1,9 +1,11 @@
 package com.tianji.aigc.service;
 
+import com.tianji.aigc.vo.ChatSessionVO;
 import com.tianji.aigc.vo.MessageVO;
 import com.tianji.aigc.vo.SessionVO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ChatSessionService {
 
@@ -34,4 +36,10 @@ public interface ChatSessionService {
      * @param userId    用户ID
      */
     void update(String sessionId, String title, Long userId);
+
+    /**
+     * 查询历史会话列表
+     * @return 历史会话列表
+     */
+    Map<String, List<ChatSessionVO>> queryHistorySession();
 }

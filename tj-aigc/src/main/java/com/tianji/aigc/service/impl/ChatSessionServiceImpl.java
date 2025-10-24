@@ -1,6 +1,7 @@
 package com.tianji.aigc.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollStreamUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.stream.StreamUtil;
@@ -15,6 +16,7 @@ import com.tianji.aigc.mapper.ChatSessionMapper;
 import com.tianji.aigc.memory.MyAssistantMessage;
 import com.tianji.aigc.service.ChatService;
 import com.tianji.aigc.service.ChatSessionService;
+import com.tianji.aigc.vo.ChatSessionVO;
 import com.tianji.aigc.vo.MessageVO;
 import com.tianji.aigc.vo.SessionVO;
 import com.tianji.common.utils.UserContext;
@@ -26,7 +28,11 @@ import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -133,5 +139,59 @@ public class ChatSessionServiceImpl extends ServiceImpl<ChatSessionMapper, ChatS
         chatSession.setUpdateTime(LocalDateTimeUtil.now());
         // 更新数据库中的聊天会话信息
         super.updateById(chatSession);
+    }
+
+    /**
+     * 查询历史会话列表
+     * @return 历史会话列表
+     */
+    @Override
+    public Map<String, List<ChatSessionVO>> queryHistorySession() {
+        Long userId = UserContext.getUser();
+        // 查询历史会话，限制返回条数
+        List<ChatSession> list = super.lambdaQuery()
+                .eq(ChatSession::getUserId, UserContext.getUser())
+                .isNotNull(ChatSession::getTitle)
+                .orderByDesc(ChatSession::getUpdateTime)
+                .last("LIMIT 30")
+                .list();
+
+        if (CollUtil.isEmpty(list)) {
+            log.info("No chat sessions found for user: {}", userId);
+            return Map.of();
+        }
+
+
+        // 转换为 ChatSessionVO 列表
+        List<ChatSessionVO> chatSessionVOS = CollStreamUtil.toList(list, chatSession ->
+                ChatSessionVO.builder()
+                        .sessionId(chatSession.getSessionId())
+                        .title(chatSession.getTitle())
+                        .updateTime(chatSession.getUpdateTime())
+                        .build()
+        );
+
+        final String TODAY = "当天";
+        final String LAST_30_DAYS = "最近30天";
+        final String LAST_YEAR = "最近1年";
+        final String MORE_THAN_YEAR = "1年以上";
+
+        // 当前时间
+        LocalDate now = LocalDateTime.now().toLocalDate();
+
+        // 按照更新时间分组
+        return CollStreamUtil.groupByKey(chatSessionVOS, vo -> {
+            // 计算两个日期之间的天数差
+            long between = Math.abs(ChronoUnit.DAYS.between(vo.getUpdateTime().toLocalDate(), now));
+            if (between == 0) {
+                return TODAY;
+            } else if (between <= 30) {
+                return LAST_30_DAYS;
+            } else if (between <= 365) {
+                return LAST_YEAR;
+            } else {
+                return MORE_THAN_YEAR;
+            }
+        });
     }
 }

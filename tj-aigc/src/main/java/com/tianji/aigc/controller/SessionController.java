@@ -1,12 +1,14 @@
 package com.tianji.aigc.controller;
 
 import com.tianji.aigc.service.ChatSessionService;
+import com.tianji.aigc.vo.ChatSessionVO;
 import com.tianji.aigc.vo.MessageVO;
 import com.tianji.aigc.vo.SessionVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/session")
@@ -39,5 +41,14 @@ public class SessionController {
     @GetMapping("/{sessionId}")
     public List<MessageVO> queryBySessionId(@PathVariable("sessionId") String sessionId) {
         return this.chatSessionService.queryBySessionId(sessionId);
+    }
+
+    /**
+     * 查询历史会话列表
+     * @return 历史会话列表
+     */
+    @GetMapping("/history")
+    public Map<String, List<ChatSessionVO>> queryHistorySession() {
+        return this.chatSessionService.queryHistorySession();
     }
 }
