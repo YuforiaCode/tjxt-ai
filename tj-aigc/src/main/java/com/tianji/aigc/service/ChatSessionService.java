@@ -48,4 +48,11 @@ public interface ChatSessionService {
      * @param sessionId 会话id
      */
     void deleteHistorySession(String sessionId);
+
+    /**
+     * 更新历史会话标题
+     * @param sessionId 会话id
+     * @param title 对话标题
+     */
+    void updateTitle(String sessionId, String title);
 }

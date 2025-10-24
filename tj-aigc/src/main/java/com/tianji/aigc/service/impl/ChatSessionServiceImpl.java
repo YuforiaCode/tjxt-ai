@@ -213,4 +213,20 @@ public class ChatSessionServiceImpl extends ServiceImpl<ChatSessionMapper, ChatS
         String conversationId = ChatService.getConversationId(sessionId);
         this.chatMemory.clear(conversationId);
     }
+
+    /**
+     * 更新历史会话标题
+     * @param sessionId 会话id
+     * @param title 对话标题
+     */
+    @Override
+    public void updateTitle(String sessionId, String title) {
+        //更新数据
+        super.lambdaUpdate()
+                // 设置更新条件, 更新字段为title(最多设置前100个字符)，更新条件为sessionId和userId
+                .set(ChatSession::getTitle, StrUtil.sub(title, 0, 100))
+                .eq(ChatSession::getSessionId, sessionId)
+                .eq(ChatSession::getUserId, UserContext.getUser())
+                .update();
+    }
 }
