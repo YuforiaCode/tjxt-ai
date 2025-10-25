@@ -28,7 +28,7 @@ public abstract class AbstractAgent implements Agent {
     @Resource
     private ChatSessionService chatSessionService;
     @Resource
-    private ChatClient chatClient;
+    private ChatClient dashScopeChatClient;
     @Resource
     private ChatMemory chatMemory;
 
@@ -116,7 +116,7 @@ public abstract class AbstractAgent implements Agent {
     }
 
     private ChatClient.ChatClientRequestSpec getChatClientRequest(String sessionId, String requestId, String question) {
-        return this.chatClient.prompt()
+        return this.dashScopeChatClient.prompt()
                 .system(promptSystem -> promptSystem.text(this.systemMessage()).params(this.systemMessageParams()))
                 .advisors(advisor -> advisor.advisors(this.advisors()).params(this.advisorParams(sessionId, requestId)))
                 .tools(this.tools())

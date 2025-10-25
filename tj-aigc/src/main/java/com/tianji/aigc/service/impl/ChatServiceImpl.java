@@ -22,7 +22,6 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.util.Map;
@@ -34,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class ChatServiceImpl implements ChatService {
 
-    private final ChatClient chatClient;
+    private final ChatClient dashScopeChatClient;
     private final SystemPromptConfig systemPromptConfig;
     private final ChatMemory chatMemory;
     private final VectorStore vectorStore;
@@ -70,7 +69,7 @@ public class ChatServiceImpl implements ChatService {
         //更新会话时间
         this.chatSessionService.update(sessionId, question, userId);
 
-        return this.chatClient.prompt()
+        return this.dashScopeChatClient.prompt()
                 .system(promptSystem -> promptSystem
                         .text(this.systemPromptConfig.getChatSystemMessage().get()) // 设置系统提示语
                         .param("now", DateUtil.now()) // 设置当前时间的参数

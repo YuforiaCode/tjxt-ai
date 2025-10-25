@@ -19,16 +19,25 @@ public class SpringAIConfig {
      * 配置 ChatClient
      */
     @Bean
-    public ChatClient chatClient(ChatClient.Builder chatClientBuilder,
+    public ChatClient dashScopeChatClient(ChatClient.Builder dashScopeChatClientBuilder,
                                  Advisor loggerAdvisor,
                                  Advisor messageChatMemoryAdvisor,
                                  Advisor recordOptimizationAdvisor, // 记录优化
                                  CourseTools courseTools, // 课程工具
                                  OrderTools orderTools // 预下单工具
     ) {  // 日志记录器
-        return chatClientBuilder
+        return dashScopeChatClientBuilder
                 .defaultAdvisors(loggerAdvisor, messageChatMemoryAdvisor, recordOptimizationAdvisor) //添加 Advisor 功能增强
                 //.defaultTools(courseTools, orderTools) //添加默认工具
+                .build();
+    }
+
+    @Bean
+    public ChatClient openAiChatClient(ChatClient.Builder openAiChatClientBuilder,
+                                       Advisor loggerAdvisor  // 日志记录器
+    ) {
+        return openAiChatClientBuilder
+                .defaultAdvisors(loggerAdvisor)
                 .build();
     }
 

@@ -14,7 +14,7 @@ import reactor.core.publisher.Flux;
 import java.util.Map;
 
 //@Service
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class AgentServiceImpl implements ChatService {
 
     /**
