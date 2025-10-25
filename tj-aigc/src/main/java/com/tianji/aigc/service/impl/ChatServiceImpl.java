@@ -22,6 +22,7 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.util.Map;
@@ -29,11 +30,12 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
-//@Service
+@Service
 @RequiredArgsConstructor
 public class ChatServiceImpl implements ChatService {
 
     private final ChatClient dashScopeChatClient;
+    private final ChatClient openAiChatClient;
     private final SystemPromptConfig systemPromptConfig;
     private final ChatMemory chatMemory;
     private final VectorStore vectorStore;
@@ -143,6 +145,19 @@ public class ChatServiceImpl implements ChatService {
     public void stop(String sessionId) {
         // 移除标记
         GENERATE_STATUS.remove(sessionId);
+    }
+
+    /**
+     * 文本对话
+     * @param question 问题
+     * @return 回答
+     */
+    @Override
+    public String chatText(String question) {
+        return this.openAiChatClient.prompt()
+                .system(this.systemPromptConfig.getTextSystemMessage().get())
+                .user(question)
+                .call().content();
     }
 
     /**

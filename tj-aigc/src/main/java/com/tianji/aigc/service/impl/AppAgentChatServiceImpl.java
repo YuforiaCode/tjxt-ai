@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Service
+//@Service
 @RequiredArgsConstructor
 public class AppAgentChatServiceImpl implements ChatService {
 
@@ -89,5 +89,10 @@ public class AppAgentChatServiceImpl implements ChatService {
     public void stop(String sessionId) {
         // 移除标记
         GENERATE_STATUS.remove(sessionId);
+    }
+
+    @Override
+    public String chatText(String question) {
+        return "";
     }
 }

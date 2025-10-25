@@ -40,4 +40,14 @@ public class ChatController {
     public void stop(@RequestParam("sessionId") String sessionId) {
         this.chatService.stop(sessionId);
     }
+
+    /**
+     * 文本对话
+     * @param question 问题
+     * @return 回答
+     */
+    @PostMapping("/text")
+    public String chatText(@RequestBody String question) {
+        return this.chatService.chatText(question);
+    }
 }

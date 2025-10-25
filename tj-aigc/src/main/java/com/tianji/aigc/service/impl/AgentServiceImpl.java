@@ -14,7 +14,7 @@ import reactor.core.publisher.Flux;
 import java.util.Map;
 
 //@Service
-//@RequiredArgsConstructor
+@RequiredArgsConstructor
 public class AgentServiceImpl implements ChatService {
 
     /**
@@ -69,5 +69,10 @@ public class AgentServiceImpl implements ChatService {
     @Override
     public void stop(String sessionId) {
         this.findAgentByType(AgentTypeEnum.ROUTE).stop(sessionId);
+    }
+
+    @Override
+    public String chatText(String question) {
+        return "";
     }
 }
