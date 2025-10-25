@@ -1,5 +1,6 @@
 package com.tianji.aigc.config;
 
+import com.tianji.aigc.advisor.RecordOptimizationAdvisor;
 import com.tianji.aigc.memory.RedisChatMemory;
 import com.tianji.aigc.tools.CourseTools;
 import com.tianji.aigc.tools.OrderTools;
@@ -21,11 +22,12 @@ public class SpringAIConfig {
     public ChatClient chatClient(ChatClient.Builder chatClientBuilder,
                                  Advisor loggerAdvisor,
                                  Advisor messageChatMemoryAdvisor,
+                                 Advisor recordOptimizationAdvisor, // 记录优化
                                  CourseTools courseTools, // 课程工具
                                  OrderTools orderTools // 预下单工具
     ) {  // 日志记录器
         return chatClientBuilder
-                .defaultAdvisors(loggerAdvisor, messageChatMemoryAdvisor) //添加 Advisor 功能增强
+                .defaultAdvisors(loggerAdvisor, messageChatMemoryAdvisor, recordOptimizationAdvisor) //添加 Advisor 功能增强
                 //.defaultTools(courseTools, orderTools) //添加默认工具
                 .build();
     }
@@ -49,5 +51,13 @@ public class SpringAIConfig {
     @Bean
     public Advisor messageChatMemoryAdvisor(ChatMemory chatMemory) {
         return new MessageChatMemoryAdvisor(chatMemory);
+    }
+
+    /**
+     * 优化对话历史记录
+     */
+    @Bean
+    public Advisor recordOptimizationAdvisor(RedisChatMemory redisChatMemory) {
+        return new RecordOptimizationAdvisor(redisChatMemory);
     }
 }
